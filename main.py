@@ -58,12 +58,12 @@ async def api_loop():
                     selling_rate = int(data.get("selling_rate", 0))
                     updated_at = data.get("updated_at")
                     if updated_at and updated_at not in shown_updates:
-                        status = "➖ Tetap"
+                        status = "➖"
                         if last_buy is not None:
                             if buying_rate > last_buy:
-                                status = "🚀 Naik"
+                                status = "🚀"
                             elif buying_rate < last_buy:
-                                status = "🔻 Turun"
+                                status = "🔻"
                         row = {
                             "buying_rate": buying_rate,
                             "selling_rate": selling_rate,
@@ -128,9 +128,9 @@ html = """
             text-align: left;
         }
         th.profit, td.profit {
-            width: 100px;
-            min-width: 100px;
-            max-width: 120px;
+            width: 90px;
+            min-width: 80px;
+            max-width: 100px;
             white-space: nowrap;
             text-align: left;
         }
