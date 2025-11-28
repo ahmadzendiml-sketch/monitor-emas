@@ -127,6 +127,13 @@ html = """
             white-space: nowrap;
             text-align: left;
         }
+        th.profit, td.profit {
+            width: 100px;
+            min-width: 100px;
+            max-width: 120px;
+            white-space: nowrap;
+            text-align: left;
+        }
         .dark-mode { background: #181a1b !important; color: #e0e0e0 !important; }
         .dark-mode #jam { color: #ffb300 !important; }
         .dark-mode table.dataTable { background: #23272b !important; color: #e0e0e0 !important; }
@@ -240,6 +247,8 @@ html = """
             <tr>
                 <th class="waktu">Waktu</th>
                 <th>Data Transaksi</th>
+                <th class="profit">Est. cuan 20 JT</th>
+                <th class="profit">Est. cuan 30 JT</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -305,7 +314,9 @@ html = """
             "order": [],
             "columns": [
                 { "data": "waktu" },
-                { "data": "all" }
+                { "data": "all" },
+                { "data": "jt20" },
+                { "data": "jt30" }
             ]
         });
 
@@ -316,7 +327,9 @@ html = """
             var dataArr = history.map(function(d) {
                 return {
                     waktu: d.created_at,
-                    all: `Harga Beli: ${d.buying_rate} | Harga Jual: ${d.selling_rate} | Status: ${d.status || "➖"}`
+                    all: `Harga Beli: ${d.buying_rate} | Harga Jual: ${d.selling_rate} | Status: ${d.status || "➖"}`,
+                    jt20: d.jt20,
+                    jt30: d.jt30
                 };
             });
             table.clear();
@@ -454,13 +467,39 @@ async def websocket_endpoint(websocket: WebSocket):
     if usd_idr_history:
         last_usd_idr_price = usd_idr_history[-1]["price"]
 
+    def calc_20jt(h):
+        try:
+            val = int((20000000 / h["buying_rate"]) * h["selling_rate"] - 19315000)
+            if val > 0:
+                return f"+{format_rupiah(val)} 🚀"
+            elif val < 0:
+                return f"-{format_rupiah(abs(val))} 🔻"
+            else:
+                return "0 ➖"
+        except Exception:
+            return "-"
+
+    def calc_30jt(h):
+        try:
+            val = int((30000000 / h["buying_rate"]) * h["selling_rate"] - 28980000)
+            if val > 0:
+                return f"+{format_rupiah(val)} 🚀"
+            elif val < 0:
+                return f"-{format_rupiah(abs(val))} 🔻"
+            else:
+                return "0 ➖"
+        except Exception:
+            return "-"
+
     await websocket.send_text(json.dumps({
         "history": [
             {
                 "buying_rate": format_rupiah(h["buying_rate"]),
                 "selling_rate": format_rupiah(h["selling_rate"]),
                 "status": h["status"],
-                "created_at": h["created_at"]
+                "created_at": h["created_at"],
+                "jt20": calc_20jt(h) if h["buying_rate"] and h["selling_rate"] else "-",
+                "jt30": calc_30jt(h) if h["buying_rate"] and h["selling_rate"] else "-"
             }
             for h in history[-1441:]
         ],
@@ -501,7 +540,9 @@ async def websocket_endpoint(websocket: WebSocket):
                             "buying_rate": format_rupiah(h["buying_rate"]),
                             "selling_rate": format_rupiah(h["selling_rate"]),
                             "status": h["status"],
-                            "created_at": h["created_at"]
+                            "created_at": h["created_at"],
+                            "jt20": calc_20jt(h) if h["buying_rate"] and h["selling_rate"] else "-",
+                            "jt30": calc_30jt(h) if h["buying_rate"] and h["selling_rate"] else "-"
                         }
                         for h in history[-1441:]
                     ],
