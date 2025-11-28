@@ -327,7 +327,7 @@ html = """
             var dataArr = history.map(function(d) {
                 return {
                     waktu: d.created_at,
-                    all: `Harga Beli: ${d.buying_rate} | Harga Jual: ${d.selling_rate} | Status: ${d.status || "➖"}`,
+                    all: `${d.status || "➖"} | Harga Beli: ${d.buying_rate} | Harga Jual: ${d.selling_rate}`,
                     jt20: d.jt20,
                     jt30: d.jt30
                 };
