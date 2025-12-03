@@ -277,7 +277,7 @@ html = """
         </div>
     <div class="container-flex">
         <div>
-            <h3 style="display:block; margin-top:30px;">Harga USD/IDR Investing - Jangka Waktu 15 Menit</h3>
+            <h3 style="display:block; margin-top:30px;">Chart Harga USD/IDR Investing - Jangka Waktu 15 Menit</h3>
         <div style="overflow:hidden; height:370px; width:620px; border:1px solid #ccc; border-radius:6px;">
         <iframe 
             src="https://sslcharts.investing.com/index.php?force_lang=54&pair_ID=2138&timescale=900&candles=80&style=candles"
@@ -367,41 +367,47 @@ html = """
             const priceListEl = document.getElementById("priceList");
 
             function formatHargaIDR(str) {
-                str = str.trim();
-                let [angka, desimal] = str.split(".");
-                angka = angka.replace(/,/g, ".");
-                if (desimal !== undefined) {
-                    return angka + "," + desimal;
-                } else {
-                    return angka;
-                }
+                return str;
             }
-            let icon = "➖";
-            if (history.length > 1) {
-                let now = parseFloat(history[history.length - 1].price.replace(/,/g, ''));
-                let prev = parseFloat(history[history.length - 2].price.replace(/,/g, ''));
-                if (now > prev) icon = "🚀";
-                else if (now < prev) icon = "🔻";
+            function parseHarga(str) {
+                return parseFloat(str.trim().replace(/\./g, '').replace(',', '.'));
             }
-            if(history.length > 0) {
-                currentPriceEl.innerHTML = `<span id="currentPrice" >${formatHargaIDR(history[history.length - 1].price)}</span> <span>${icon}</span>`;
+            
+            const reversed = history.slice().reverse();
+                
+            let rowIconCurrent = "➖";
+            if (reversed.length > 1) {
+                let now = parseHarga(reversed[0].price);
+                let prev = parseHarga(reversed[1].price);
+                if (now > prev) rowIconCurrent = "🚀";
+                else if (now < prev) rowIconCurrent = "🔻";
             }
+            currentPriceEl.innerHTML = `<span id="currentPrice">${formatHargaIDR(reversed[0].price)}</span> <span>${rowIconCurrent}</span>`;
+
             priceListEl.innerHTML = "";
-            for (let i = history.length - 1; i >= 0; i--) {
+            for (let i = 0; i < reversed.length; i++) {
                 let rowIcon = "➖";
-                if (i < history.length - 1) {
-                    let now = parseFloat(history[i].price.replace(/,/g, ''));
-                    let prev = parseFloat(history[i+1].price.replace(/,/g, ''));
-                    if (now > prev) rowIcon = "🚀";
-                    else if (now < prev) rowIcon = "🔻";
-                } else if (i === history.length - 1) {
-                    rowIcon = icon;
+                if (i === 0 && reversed.length > 1) {
+                    let now = parseHarga(reversed[0].price);
+                    let prev = parseHarga(reversed[1].price);
+                    if (now > prev) rowIcon = "🟢";
+                    else if (now < prev) rowIcon = "🔴";
+                } else if (i < reversed.length - 1) {
+                    let now = parseHarga(reversed[i].price);
+                    let next = parseHarga(reversed[i+1].price);
+                    if (now > next) rowIcon = "🟢";
+                    else if (now < next) rowIcon = "🔴";
+                } else if (i === reversed.length - 1 && reversed.length > 1) {
+                    let now = parseHarga(reversed[i].price);
+                    let prev = parseHarga(reversed[i-1].price);
+                    if (now > prev) rowIcon = "🟢";
+                    else if (now < prev) rowIcon = "🔴";
                 }
                 const li = document.createElement("li");
-                li.textContent = formatHargaIDR(history[i].price) + " ";
+                li.textContent = formatHargaIDR(reversed[i].price) + " ";
                 const spanTime = document.createElement("span");
                 spanTime.className = "time";
-                spanTime.textContent = `(${history[i].time})`;
+                spanTime.textContent = `(${reversed[i].time})`;
                 li.appendChild(spanTime);
                 const iconSpan = document.createElement("span");
                 iconSpan.className = "price-icon";
@@ -411,7 +417,7 @@ html = """
                 priceListEl.appendChild(li);
             }
         }
-
+        
         function updateJam() {
             var now = new Date();
             var tgl = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -471,9 +477,9 @@ async def websocket_endpoint(websocket: WebSocket):
         try:
             val = int((20000000 / h["buying_rate"]) * h["selling_rate"] - 19315000)
             if val > 0:
-                return f"+{format_rupiah(val)} 🚀"
+                return f"+{format_rupiah(val)} 🟢"
             elif val < 0:
-                return f"-{format_rupiah(abs(val))} 🔻"
+                return f"-{format_rupiah(abs(val))} 🔴"
             else:
                 return "0 ➖"
         except Exception:
@@ -483,9 +489,9 @@ async def websocket_endpoint(websocket: WebSocket):
         try:
             val = int((30000000 / h["buying_rate"]) * h["selling_rate"] - 28980000)
             if val > 0:
-                return f"+{format_rupiah(val)} 🚀"
+                return f"+{format_rupiah(val)} 🟢"
             elif val < 0:
-                return f"-{format_rupiah(abs(val))} 🔻"
+                return f"-{format_rupiah(abs(val))} 🔴"
             else:
                 return "0 ➖"
         except Exception:
